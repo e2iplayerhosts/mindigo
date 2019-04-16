@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-04-10 Celeburdi
+# 2019-04-16 Celeburdi
 ###################################################
-HOST_VERSION = "1.1"
+HOST_VERSION = "1.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -68,15 +68,16 @@ def _addepg(epgs,id,item):
    
 def _getChannelDefs():
     return [
-        {"title": "M1 HD", "icon": "m1hd.jpg", "group" : "main" },
+        {"title": "M1 HD", "icon": "m1hd.jpg", "group" : "main", "selres": True },
         {"title": "M2 HD", "icon": "m2hd.jpg", "group" : "child", "selres": True },
-        {"title": "Duna HD", "icon": "dunahd.jpg", "group" : "main" },
+        {"title": "Duna HD", "icon": "dunahd.jpg", "group" : "main", "selres": True },
         {"title": "M4 Sport HD", "icon": "m4sport.jpg", "group" : "sport", "selres": True },
         {"title": "M5 HD", "icon": "m5.jpg", "group" : "main", "selres": True },
-        {"title": "Duna World", "icon": "dunaworld.jpg", "group" : "main", "selres": True },
+        {"title": "Duna World", "icon": "dunaworld.jpg", "group" : "main" },
         {"title": "Izaura TV", "icon": "izauratv.jpg", "group" : "movie", "selres": True },
         {"title": "Zenebutik", "icon": "zenebutik.jpg", "group" : "music", "selres": True },
         {"title": "FEM3", "icon": "fem3.jpg", "group" : "movie", "selres": True },
+        {"title": "Hír TV", "icon": "hirtv.jpg", "group" : "news", "selres": True },
         {"title": "Balaton TV", "icon": "balatontv.jpg", "group" : "regional", "selres": True },
         {"title": "JUCE-Smile", "icon": "smileofachild.jpg", "group" : "child", "selres": True },
         {"title": "Fix TV", "icon": "fixtv.jpg", "group" : "regional", "selres": True },
@@ -146,7 +147,28 @@ def _getChannelDefs():
         {"title": "Radio Swiss Jazz", "icon": "swissjazz.jpg", "group" : "music" },
         {"title": "Radio Swiss Pop", "icon": "swisspop.jpg", "group" : "music" },
 
+        {"title": "Kossuth rádió", "icon": "kossuthradio.jpg", "group" : "main" },
+        {"title": "Petőfi rádió", "icon": "petofiradio.jpg", "group" : "main" },
+        {"title": "Bartók rádió", "icon": "bartokradio.jpg", "group" : "main" },
+
         ]
+
+
+def _mr(url):
+    return "http://icast.connectmedia.hu/"+url
+
+
+def _getDirectRadios():
+    return [
+        {"title": "Kossuth rádió", "url": "D" + _mr("4734/mr1.aac")+","+_mr("4736/mr1.mp3") },
+        {"title": "Petőfi rádió", "url": "D" + _mr("4737/mr2.aac")+","+_mr("4738/mr2.mp3") },
+        {"title": "Bartók rádió", "url": "D" + _mr("4739/mr3.aac")+","+_mr("4741/mr3.mp3") },
+
+        ]
+    
+
+
+
 
 class MindiGoHU(CBaseHostClass):
 
@@ -374,6 +396,29 @@ class MindiGoHU(CBaseHostClass):
                 radioChannels.append(params)
         except Exception: printExc()
 
+        # get direct radio
+        for i in _getDirectRadios():
+            title = i["title"]
+            url = i["url"]
+            chdef = next((chdef for chdef in chdefs if chdef["title"] == title), None)
+
+            if chdef:
+                title = chdef.get("rename",title)
+                icon = chdef.get("icon")
+                if icon: icon = _gh(icon)
+                order = groups.index(chdef.get("group",""))
+            else:
+                icon = ""
+                order = 0           
+                if next((x for x in radioChannels if x["title"] == title), None): continue
+            params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url }
+            if icon:
+                params['icon']= icon
+            ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
+            if ch:
+                params["epg"]=_addepg(radioEpgs,ch["id"],params)
+            radioChannels.append(params)
+ 
         if len(tvChannels) > 0:
             tvChannels.sort(key=lambda k: (k["order"], k["title"]))
             self.tvChannels=tvChannels
@@ -536,10 +581,13 @@ class MindiGoHU(CBaseHostClass):
         try:
             if url[:1] == "D":
                 if not url.endswith(".m3u"):
-                    return [{'name':'direct link', 'url':url[1:]}]
-                sts, data = self.cm.getPage(url[1:], self.hbbtvParams)
-                if not sts: return []
-                data = data.replace("\r\n", "\n").split("\n")
+                    data = url[1:].split(",")
+                else:    
+                    sts, data = self.cm.getPage(url[1:], self.hbbtvParams)
+                    if not sts: return []
+                    data = data.replace("\r\n", "\n").split("\n")
+                if len(data) == 1:
+                    return [{'name':'direct link', 'url': data[0]} ]  
                 for i in data:
                     if not i.startswith("http"): continue
                     if i.endswith('.mp3'):
