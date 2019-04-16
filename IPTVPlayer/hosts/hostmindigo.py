@@ -2,7 +2,7 @@
 ###################################################
 # 2019-04-16 Celeburdi
 ###################################################
-HOST_VERSION = "1.2"
+HOST_VERSION = "1.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -166,8 +166,16 @@ def _getDirectRadios():
 
         ]
     
+def _getMTVATVs():
+    return [
+        {"title": "Duna HD", "url": "dunalive" },
+        {"title": "Duna World", "url": "dunaworldlive" },
+        {"title": "M1 HD", "url": "mtv1live" },
+        {"title": "M2 HD", "url": "mtv2live" },
+        {"title": "M4 Sport HD", "url": "mtv4live" },
+        {"title": "M5 HD", "url": "mtv5live" },
 
-
+        ]
 
 
 class MindiGoHU(CBaseHostClass):
@@ -218,6 +226,8 @@ class MindiGoHU(CBaseHostClass):
             "eJxLzNAvSkzJzNfPzEtJrdAryCgAAD8uBsU="))
         self.HBBTV_MTVA_URL = self.HBBTV_URL+zlib.decompress(base64.b64decode(
             "eJzLLSlL1M9JLM1Lzkgt0s/MS0mt0CvIKAAAbGkI9w=="))
+        self.MTVA_CHANNEL_URL = zlib.decompress(base64.b64decode(
+            "eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw=="))
 
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
@@ -363,6 +373,29 @@ class MindiGoHU(CBaseHostClass):
                         params["epg"]=_addepg(tvEpgs,ch["id"],params)
                     tvChannels.append(params)
         except Exception: printExc()
+
+
+        # get MTVA TV channels
+        for i in _getMTVATVs():
+            title = i["title"]
+            url = "K"+i["url"]
+            chdef = next((chdef for chdef in chdefs if chdef["title"] == title), None)
+            if chdef:
+                title = chdef.get("rename",title)
+                icon = chdef.get("icon")
+                if icon: icon = _gh(icon)
+                order = groups.index(chdef.get("group",""))
+            else:
+                icon = ""
+                order = 0
+            params = {'good_for_fav': True, "title": title + " (MTVA)", "desc": "", "order": order, "url": url }
+            if icon:
+                params['icon']= icon
+            ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
+            if ch:
+                params["epg"]=_addepg(tvEpgs,ch["id"],params)
+            tvChannels.append(params)
+
 
         # get HbbTV radio channels
         try:
@@ -625,12 +658,18 @@ class MindiGoHU(CBaseHostClass):
                     elif url[:1] == "H":
                         sts, link = self.cm.getPage(self.HBBTV_MEDIA_URL.format( url[1:] ), self.hbbtvParams)
                         if not sts: return []
+                    elif url[:1] == "K":
+                        sts, link = self.cm.getPage(self.MTVA_CHANNEL_URL + url[1:], self.hbbtvParams)
+                        if not sts: return []
+                        link = self.cm.ph.getDataBeetwenMarkers(link, '"file": "', '"', False)[1]
+                        link = "https:" + link.replace("\/","/") 
+                       
                     else: return []
                     expires = int(time.time())+21600 
                     cItem["link"] = link
                     cItem["expires"] = expires
 
-            if url[:1] in  ["R","V"]:
+            if url[:1] in  ["R","V","K"]:
                 uri = urlparser.decorateParamsFromUrl(link)
                 protocol = uri.meta.get('iptv_proto', '')
                 printDBG("PROTOCOL [%s] " % protocol)
