@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-04-16 Celeburdi
+# 2019-04-17 Celeburdi
 ###################################################
-HOST_VERSION = "1.3"
+HOST_VERSION = "1.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -150,6 +150,7 @@ def _getChannelDefs():
         {"title": "Kossuth rádió", "icon": "kossuthradio.jpg", "group" : "main" },
         {"title": "Petőfi rádió", "icon": "petofiradio.jpg", "group" : "main" },
         {"title": "Bartók rádió", "icon": "bartokradio.jpg", "group" : "main" },
+        {"title": "Manna FM", "icon": "mannafm.jpg", "group" : "regional" },
 
         ]
 
@@ -163,6 +164,7 @@ def _getDirectRadios():
         {"title": "Kossuth rádió", "url": "D" + _mr("4734/mr1.aac")+","+_mr("4736/mr1.mp3") },
         {"title": "Petőfi rádió", "url": "D" + _mr("4737/mr2.aac")+","+_mr("4738/mr2.mp3") },
         {"title": "Bartók rádió", "url": "D" + _mr("4739/mr3.aac")+","+_mr("4741/mr3.mp3") },
+        {"title": "Manna FM", "url": "D" + _mr("4780/live.mp3") },
 
         ]
     
