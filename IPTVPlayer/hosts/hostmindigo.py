@@ -2,7 +2,7 @@
 ###################################################
 # 2019-04-17 Celeburdi
 ###################################################
-HOST_VERSION = "1.4"
+HOST_VERSION = "1.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -138,6 +138,7 @@ def _getChannelDefs():
         {"title": "iConcerts HD", "icon": "iconcerts.jpg", "group" : "music" },
         {"title": "DOQ TV", "rename": "DOQ Channel", "icon": "doq.jpg", "group" : "docu" },
         {"title": "National Geographic Wild", "rename": "NAT GEO Wild", "icon": "natgeowild.jpg", "group" : "docu" },
+
         {"title": "Dankó Rádió", "icon": "dankoradio.jpg", "group" : "main" },
         {"title": "Duna World Rádió", "icon": "dunaworldradio.jpg", "group" : "main" },
         {"title": "Nemzetiségi adások", "icon": "nemzetisegiadasok.jpg", "group" : "main" },
@@ -151,6 +152,7 @@ def _getChannelDefs():
         {"title": "Petőfi rádió", "icon": "petofiradio.jpg", "group" : "main" },
         {"title": "Bartók rádió", "icon": "bartokradio.jpg", "group" : "main" },
         {"title": "Manna FM", "icon": "mannafm.jpg", "group" : "regional" },
+        {"title": "River FM", "icon": "riverfm.jpg", "group" : "religious" },
 
         ]
 
@@ -161,10 +163,22 @@ def _mr(url):
 
 def _getDirectRadios():
     return [
-        {"title": "Kossuth rádió", "url": "D" + _mr("4734/mr1.aac")+","+_mr("4736/mr1.mp3") },
-        {"title": "Petőfi rádió", "url": "D" + _mr("4737/mr2.aac")+","+_mr("4738/mr2.mp3") },
-        {"title": "Bartók rádió", "url": "D" + _mr("4739/mr3.aac")+","+_mr("4741/mr3.mp3") },
+        {"title": "Kossuth rádió", "url": "D" + _mr("4734/mr1.aac")+","+_mr("4736/mr1.mp3")+","+_mr("4764/mr1.ogg") },
+        {"title": "Petőfi rádió", "url": "D" + _mr("4737/mr2.aac")+","+_mr("4738/mr2.mp3")+","+_mr("4765/mr2.ogg") },
+        {"title": "Bartók rádió", "url": "D" + _mr("4739/mr3.aac")+","+_mr("4741/mr3.mp3")+","+_mr("4766/mr3.ogg") },
+
+        {"title": "Dankó Rádió",  "url": "D" + _mr("4747/mr7.aac")+","+_mr("4748/mr7.mp3")+","+_mr("4770/mr7.ogg") },
+        {"title": "Duna World Rádió",  "url": "D" + _mr("4760/dwr.aac")+","+_mr("4761/dwr.mp3")+","+_mr("4776/dwr.ogg") },
+        {"title": "Nemzetiségi adások", "url": "D" + _mr("4743/mr4.aac")+","+_mr("4744/mr4.mp3")+","+_mr("4768/mr4.ogg") },
+        {"title": "Parlamenti adások",  "url": "D" + _mr("4745/mr5.aac")+","+_mr("4746/mr5.mp3")+","+_mr("4769/mr5.ogg") },
+
+        {"title": "Radio Swiss Classic (fr)", "url": "D" + _mr("4786/live.mp3") },
+        {"title": "Radio Swiss Classic (ger)", "url": "D" + _mr("4785/live.mp3") },
+        {"title": "Radio Swiss Jazz", "url": "D" + _mr("4787/live.mp3") },
+        {"title": "Radio Swiss Pop", "url": "D" + _mr("4788/live.mp3") },
+
         {"title": "Manna FM", "url": "D" + _mr("4780/live.mp3") },
+        {"title": "River FM", "url": "D" + _mr("4711/live.mp3") },
 
         ]
     
@@ -398,39 +412,6 @@ class MindiGoHU(CBaseHostClass):
                 params["epg"]=_addepg(tvEpgs,ch["id"],params)
             tvChannels.append(params)
 
-
-        # get HbbTV radio channels
-        try:
-            sts, data = self.cm.getPage(self.HBBTV_RADIO_URL, self.hbbtvParams)
-            if not sts: raise Exception("Can't get HbbTV radio channels")
-            data = self.cm.ph.getAllItemsBeetwenMarkers(data, "videos[", ";", False)
-            for i in data:
-                v = self.cm.ph.getAllItemsBeetwenMarkers(i, '"', '"', False)
-                if len(v) < 3: continue
-                title = v[2]
-                url = "D"+v[0]
-                               
-                chdef = next((chdef for chdef in chdefs if chdef["title"] == title), None)
-                if chdef:
-                    title = chdef.get("rename",title)
-                    icon = chdef.get("icon")
-                    if icon: icon = _gh(icon)
-                    order = groups.index(chdef.get("group",""))
-                else:
-                    icon = ""
-                    order = 0
-
-                if next((x for x in radioChannels if x["title"] == title), None): continue
-                   
-                params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url }
-                if icon:
-                    params['icon']= icon
-                ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
-                if ch:
-                    params["epg"]=_addepg(radioEpgs,ch["id"],params)
-                radioChannels.append(params)
-        except Exception: printExc()
-
         # get direct radio
         for i in _getDirectRadios():
             title = i["title"]
@@ -627,8 +608,12 @@ class MindiGoHU(CBaseHostClass):
                     if not i.startswith("http"): continue
                     if i.endswith('.mp3'):
                         videoUrls.append({'name': "mp3", 'url':i})
+                        continue;
                     if i.endswith('.aac'):
                         videoUrls.append({'name': "aac", 'url':i})
+                        continue;
+                    if i.endswith('.ogg'):
+                        videoUrls.append({'name': "ogg", 'url':i})
                 return videoUrls
             if url[:1] == "V":
                 sts, data = self.getApiPage(self.VOD_URL.format( url[1:] ))
