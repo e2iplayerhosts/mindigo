@@ -2,7 +2,7 @@
 ###################################################
 # 2019-04-17 Celeburdi
 ###################################################
-HOST_VERSION = "1.6"
+HOST_VERSION = "1.7"
 ###################################################
 # LOCAL import
 ###################################################
@@ -712,10 +712,9 @@ class MindiGoHU(CBaseHostClass):
         self.tryTologin()
         try:
             if url == "mm3":
-                return [{"name": "BANDWIDTH=2128000,RESOLUTION=1280x720", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b2128000_slhun.m3u8" },
-                    {"name": "BANDWIDTH=1328000,RESOLUTION=848x480", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b1328000_slhun.m3u8" },
-                    {"name": "BANDWIDTH=928000,RESOLUTION=640x360", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b928000_slhun.m3u8" },
-                    ] 
+                return [
+                    {"name":"direct link", "url": "https://stream.nava.hu:443/m3_live_drm/_definst_/smil:m3_720p.smil/playlist.m3u8"}
+                    ]
             if url[:1] == "D":
                 if not url.endswith(".m3u"):
                     data = url[1:].split(",")
