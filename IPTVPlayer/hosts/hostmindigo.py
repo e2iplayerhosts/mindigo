@@ -2,7 +2,7 @@
 ###################################################
 # 2019-04-17 Celeburdi
 ###################################################
-HOST_VERSION = "1.5"
+HOST_VERSION = "1.6"
 ###################################################
 # LOCAL import
 ###################################################
@@ -20,7 +20,8 @@ from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
 ###################################################
 import os
 from datetime import datetime
-import time
+from time import time
+
 import zlib
 import cookielib
 import urllib
@@ -139,18 +140,18 @@ def _getChannelDefs():
         {"title": "DOQ TV", "rename": "DOQ Channel", "icon": "doq.jpg", "group" : "docu" },
         {"title": "National Geographic Wild", "rename": "NAT GEO Wild", "icon": "natgeowild.jpg", "group" : "docu" },
 
-        {"title": "Dankó Rádió", "icon": "dankoradio.jpg", "group" : "main" },
+        {"title": "Dankó Rádió", "icon": "dankoradio.jpg", "group" : "main", "epg_id": "dankoradio.hu", "epg_prov_id": "porthu" },
         {"title": "Duna World Rádió", "icon": "dunaworldradio.jpg", "group" : "main" },
-        {"title": "Nemzetiségi adások", "icon": "nemzetisegiadasok.jpg", "group" : "main" },
+        {"title": "Nemzetiségi adások", "icon": "nemzetisegiadasok.jpg", "group" : "main", "epg_id": "nemzetisegiadasok.hu", "epg_prov_id": "porthu" },
         {"title": "Parlamenti adások", "icon": "parlamentiadasok.jpg", "group" : "main" },
         {"title": "Radio Swiss Classic (fr)", "icon": "swissclassic.jpg", "group" : "music" },
         {"title": "Radio Swiss Classic (ger)", "icon": "swissclassic.jpg", "group" : "music" },
         {"title": "Radio Swiss Jazz", "icon": "swissjazz.jpg", "group" : "music" },
         {"title": "Radio Swiss Pop", "icon": "swisspop.jpg", "group" : "music" },
 
-        {"title": "Kossuth rádió", "icon": "kossuthradio.jpg", "group" : "main" },
-        {"title": "Petőfi rádió", "icon": "petofiradio.jpg", "group" : "main" },
-        {"title": "Bartók rádió", "icon": "bartokradio.jpg", "group" : "main" },
+        {"title": "Kossuth rádió", "icon": "kossuthradio.jpg", "group" : "main", "epg_id": "kossuthradio.hu", "epg_prov_id": "porthu" },
+        {"title": "Petőfi rádió", "icon": "petofiradio.jpg", "group" : "main", "epg_id": "petofiradio.hu", "epg_prov_id": "porthu" },
+        {"title": "Bartók rádió", "icon": "bartokradio.jpg", "group" : "main", "epg_id": "bartokradio.hu", "epg_prov_id": "porthu" },
         {"title": "Manna FM", "icon": "mannafm.jpg", "group" : "regional" },
         {"title": "River FM", "icon": "riverfm.jpg", "group" : "religious" },
 
@@ -193,6 +194,87 @@ def _getMTVATVs():
 
         ]
 
+class EPGProviderNone:
+    def getName(self):
+        return ("EPGProviderNone")
+
+    def getEPGItem(self, chId):
+        return None
+
+    def getEPG(self, epgId, epgType):
+        printDBG("EPGProviderNone.getEPG %r : %r, %r" % (epgId.provId, epgId.itemId, epgType))
+        return None,""    
+
+
+class EPGProvider:
+    def __init__(self,hostmindigo):
+        self.cache = {}
+        self.mg = hostmindigo
+
+    def getName(self):
+        return ("mindigo")
+
+    def getEPGItem(self, chId):
+        timenow = round(time())
+        item = self.cache.get(chId)
+        if item and item.get("expires",0) > timenow: return item
+        if chId[:1] == "E": sts, data = self.mg.getApiPage( self.mg.LIVEINFO_URL + chId[1:] )
+        elif chId[:1] == "V": sts, data = self.mg.getApiPage( self.mg.VODINFO_URL + chId[1:] )
+        else: return None
+        if not sts:
+            if item: self.cache.pop(chId,None)
+            return None
+        try:
+            data = json_loads(data)["data"]["detail"]
+            if chId[:1] == "E":
+                expires = data["endTimeStamp"]
+                start = datetime.fromtimestamp(data["startTimeStamp"]).strftime("%H:%M")
+                end = datetime.fromtimestamp(expires).strftime("-%H:%M ")
+                title = start + end + data["title"]
+            else:
+                expires = 2147483647
+                title = ""
+
+            data = data["movieData"]
+            item = {
+                "expires": expires,
+                "title": title,
+                "desc": data.get("description","") or ""
+                }
+                    
+            other_info = {}
+            if data["ageRating"]:
+                other_info['age_limit'] = str(data["ageRating"])
+            if data["genre"]:
+                other_info['genre'] = data["genre"]
+            if data["year"]:
+                other_info["year"] = str(data["year"])
+                   
+            item["other_info"] = other_info
+
+            if len(self.cache) > 100: self.cache.popitem()
+            self.cache[chId] = item
+        except:
+            printExc()
+            return None
+        return item
+
+    def getEPG(self, epgId, epgType):
+        printDBG("MindiGo.getEPG %r : %r, %r" % (epgId.provId, epgId.itemId, epgType))
+
+        item = self.getEPGItem(epgId.itemId)
+        if not item: return None,""
+
+        title = item["title"]
+        if title:
+            title = title + "[/br]"
+        ret = title + item["desc"]
+
+        timeout = item["expires"] - round(time())
+        if timeout < 3: timeout = 3
+
+        printDBG(">> timeout: %s" % timeout)
+        return timeout, ret
 
 class MindiGoHU(CBaseHostClass):
 
@@ -263,6 +345,16 @@ class MindiGoHU(CBaseHostClass):
         self.radioEpgs = None
 
         self.token = ""
+
+        self.epgProvider = EPGProvider(self)
+
+        try:
+            from Plugins.Extensions.IPTVPlayer.epgproviders.porthu import EPGProvider as EPGProvider_porthu
+            self.epgProvider_porthu = EPGProvider_porthu()
+        except:
+            self.epgProvider_porthu = EPGProviderNone()
+
+        
  
     def getFullIconUrl(self, url):
         if not url: return self.DEFAULT_ICON_URL
@@ -325,10 +417,13 @@ class MindiGoHU(CBaseHostClass):
                 if selres: url = "R"+i["id"]
                 else: url = "M"+i["id"]
 
-                params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url }
+                epg_id = "E"+i["id"] 
+
+                params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url, "epg_id": epg_id, "epg_prov_id": "mindigo"  }
                 if icon:
                     params['icon']= icon
-                params["epg"] = _addepg(tvEpgs,i["id"],params)
+           
+                _addepg(tvEpgs,i["id"],params)
                 tvChannels.append(params)
         except Exception: printExc()
 
@@ -356,7 +451,9 @@ class MindiGoHU(CBaseHostClass):
                     params['icon']= icon
                 ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
                 if ch:
-                    params["epg"]=_addepg(tvEpgs,ch["id"],params)
+                    epg_id = "E"+ch["id"]
+                    params.update( {"epg_id": epg_id, "epg_prov_id": "mindigo"} )
+                    _addepg(tvEpgs,ch["id"],params)
                 tvChannels.append(params)
         except Exception: printExc()
 
@@ -386,7 +483,9 @@ class MindiGoHU(CBaseHostClass):
                         params['icon']= icon
                     ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
                     if ch:
-                        params["epg"]=_addepg(tvEpgs,ch["id"],params)
+                        epg_id = "E"+ch["id"]
+                        params.update( {"epg_id": epg_id, "epg_prov_id": "mindigo"} )
+                        _addepg(tvEpgs,ch["id"],params)
                     tvChannels.append(params)
         except Exception: printExc()
 
@@ -409,9 +508,15 @@ class MindiGoHU(CBaseHostClass):
                 params['icon']= icon
             ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
             if ch:
-                params["epg"]=_addepg(tvEpgs,ch["id"],params)
+                epg_id = "E"+ch["id"]
+                params.update( {"epg_id": epg_id, "epg_prov_id": "mindigo"} )
+                _addepg(tvEpgs,ch["id"],params)
             tvChannels.append(params)
 
+        # add nava m3
+        params = {'good_for_fav': True, "title": "M3 (MTVA)", "desc": "", "order": 2, "url": "m"+"m3", "icon": _gh("m3.jpg") }
+        tvChannels.append(params)
+        
         # get direct radio
         for i in _getDirectRadios():
             title = i["title"]
@@ -423,16 +528,23 @@ class MindiGoHU(CBaseHostClass):
                 icon = chdef.get("icon")
                 if icon: icon = _gh(icon)
                 order = groups.index(chdef.get("group",""))
+                epg_id = chdef.get("epg_id")
             else:
-                icon = ""
-                order = 0           
                 if next((x for x in radioChannels if x["title"] == title), None): continue
+                icon = ""
+                order = 0
+                epg_id = None
+
             params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url }
             if icon:
                 params['icon']= icon
             ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
             if ch:
-                params["epg"]=_addepg(radioEpgs,ch["id"],params)
+                params.update({"epg_id": "E"+ch["id"], "epg_prov_id": "mindigo" })
+                _addepg(radioEpgs,ch["id"],params)
+            elif epg_id:
+                params.update({"epg_id": epg_id, "epg_prov_id": chdef["epg_prov_id"]})
+
             radioChannels.append(params)
  
         if len(tvChannels) > 0:
@@ -460,8 +572,12 @@ class MindiGoHU(CBaseHostClass):
                 id = epg["id"]
                 ch = next((ch for ch in mindigChannels if ch["id"] == id), None)
                 if not ch: continue
+                data = ch["epg"] 
+                start = datetime.fromtimestamp(data["startTimeStamp"]).strftime("%H:%M")
+                end = datetime.fromtimestamp(data["endTimeStamp"]).strftime("-%H:%M ")
+                desc = start + end + data["title"]  
                 for i in epg["items"]:
-                    i["desc"] = ch["epg"]["title"]
+                    i["desc"] = desc
 
         except Exception: printExc()
 
@@ -577,7 +693,7 @@ class MindiGoHU(CBaseHostClass):
                 if "image" in i and len(i["image"]) > 0:
                     icon = i["image"][0].get("simple")
                     
-                params.update({'good_for_fav': True, "title": i["title"], "url": "V" +i["id"] } )
+                params.update({'good_for_fav': True, "title": i["title"], "url": "V"+i["id"], "epg_id": "V"+i["id"], "epg_prov_id": "mindigo" } )
                 if icon:
                     params["icon"] = icon
             
@@ -595,6 +711,11 @@ class MindiGoHU(CBaseHostClass):
         videoUrls = []
         self.tryTologin()
         try:
+            if url == "mm3":
+                return [{"name": "BANDWIDTH=2128000,RESOLUTION=1280x720", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b2128000_slhun.m3u8" },
+                    {"name": "BANDWIDTH=1328000,RESOLUTION=848x480", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b1328000_slhun.m3u8" },
+                    {"name": "BANDWIDTH=928000,RESOLUTION=640x360", "url": "https://stream.nava.hu/m3_live_drm/_definst_/smil:m3_720p.smil/chunklist_w307509773_b928000_slhun.m3u8" },
+                    ] 
             if url[:1] == "D":
                 if not url.endswith(".m3u"):
                     data = url[1:].split(",")
@@ -629,7 +750,7 @@ class MindiGoHU(CBaseHostClass):
                 link = cItem.get("link")
                 expires = cItem.get("expires",0)
                
-                if not link or expires < time.time():
+                if not link or expires < time():
                     cItem.pop("link",None)
                     cItem.pop("expires",None)
                     if url[:1] in ["M","R"]:
@@ -652,7 +773,7 @@ class MindiGoHU(CBaseHostClass):
                         link = "https:" + link.replace("\/","/") 
                        
                     else: return []
-                    expires = int(time.time())+21600 
+                    expires = int(time())+21600 
                     cItem["link"] = link
                     cItem["expires"] = expires
 
@@ -695,35 +816,20 @@ class MindiGoHU(CBaseHostClass):
         printDBG("MindiGoHU.getArticleContent [%s]" % cItem)
         url = cItem["url"]
         desc = cItem.get("desc","")
-        otherinfo = {}
-        if url[:1] == "V" or "epg" in cItem:
-            if url[:1] == "V": infourl = self.VODINFO_URL + url[1:]
-            else: infourl = self.LIVEINFO_URL + self.tvEpgs[cItem["epg"]]["id"]
-            sts, data = self.getApiPage( infourl)
-            if sts:
-                try:
-                    data = json_loads(data)["data"]["detail"]
-                    if data["type"] == "epg":
-                        start = datetime.fromtimestamp(data["startTimeStamp"]).strftime(" %H:%M")
-                        end = datetime.fromtimestamp(data["endTimeStamp"]).strftime("-%H:%M")
-                        title = data["title"] + start + end  
-                    else:
-                        title = ""
-                    data = data["movieData"]
-                    if data["ageRating"]:
-                        otherinfo['age_limit'] = str(data["ageRating"])
-                    if data["genre"]:
-                        otherinfo['genre'] = data["genre"]
-                    if data["year"]:
-                        otherinfo["year"] = str(data["year"])
-                    tmp = data.get("description","")
-                    if tmp and title:
-                        title = title + "\n"
-                    desc = title + tmp
-                except: pass
+        other_info = {}
+        if "epg_id" in cItem:
+            epg_provider = self.getEPGProviderById( cItem["epg_prov_id"])
+            item = epg_provider.getEPGItem( cItem["epg_id"] )
+            if item:
+                title = item["title"]
+                if title:
+                    title = title + "[/br]"
+                desc = title + item["desc"]
+                other_info = item["other_info"]
+
         retTab = {'title':cItem['title'], 'text': desc, 'images':[{'title':'', 'url':self.getFullIconUrl(cItem.get('icon'))}] }
-        if otherinfo:
-            retTab["other_info"] = otherinfo
+        if other_info:
+            retTab["other_info"] = other_info
         return [retTab]
 
     def tryTologin(self):
@@ -838,13 +944,24 @@ class MindiGoHU(CBaseHostClass):
         CBaseHostClass.endHandleService(self, index, refresh)
 
 
+    def getEPGProviderById(self, provId):
+        printDBG("MindiGoHU.getEPGProviderById")
+        if provId == "mindigo":
+            return self.epgProvider
+        elif provId == "porthu":
+            return self.epgProvider_porthu
+
+
 class IPTVHost(CHostBase):
 
     def __init__(self):
         CHostBase.__init__(self, MindiGoHU(), True, [])
 
     def withArticleContent(self, cItem):
-        if (cItem['type'] != 'video' and cItem['category'] not in ['list_playlist','list_episodes','list_subcategories']):
-            return False
-        return True
+        if cItem['type'] in ["video","radio"]:
+            return True
+        return False
+##            != 'video' and cItem['category'] not in ['list_playlist','list_episodes','list_subcategories']):
+##            return False
+##        return True
 
