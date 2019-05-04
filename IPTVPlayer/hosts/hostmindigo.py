@@ -2,7 +2,7 @@
 ###################################################
 # 2019-04-17 Celeburdi
 ###################################################
-HOST_VERSION = "1.7"
+HOST_VERSION = "1.8"
 ###################################################
 # LOCAL import
 ###################################################
@@ -13,6 +13,7 @@ from Plugins.Extensions.IPTVPlayer.libs.urlparserhelper import getDirectM3U8Play
 from Plugins.Extensions.IPTVPlayer.libs.urlparser import urlparser
 from Plugins.Extensions.IPTVPlayer.libs.e2ijson import loads as json_loads, dumps as json_dumps
 from Plugins.Extensions.IPTVPlayer.libs.youtube_dl.utils import clean_html
+from Plugins.Extensions.IPTVPlayer.tools.iptvtypes import strwithmeta
 ###################################################
 
 ###################################################
@@ -712,9 +713,26 @@ class MindiGoHU(CBaseHostClass):
         self.tryTologin()
         try:
             if url == "mm3":
+                link = cItem.get("link")
+                expires = cItem.get("expires",0)
+                if not link or expires < time():
+                    cItem.pop("link",None)
+                    cItem.pop("expires",None)
+                
+                    sts, data = self.getPage("https://archivum.mtva.hu/m3")
+                    if not sts: return []
+                    link = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
+                    expires = int(time())+3600 
+                    cItem["link"] = link
+                    cItem["expires"] = expires
+
+                url1 = strwithmeta("https://strlb2.nava.hu/lbs/m3_live_drm/_definst_/smil:m3_720p.smil?type=m3u8&sessid="+link,{'User-Agent':self.HEADER ['User-Agent']} ) 
+                url2 = strwithmeta("https://strlb2.nava.hu/lbs/m3_live_drm/_definst_/smil:m3.smil?type=m3u8&sessid="+link,{'User-Agent':self.HEADER ['User-Agent']} ) 
+
                 return [
-                    {"name":"direct link", "url": "https://stream.nava.hu:443/m3_live_drm/_definst_/smil:m3_720p.smil/playlist.m3u8"}
-                    ]
+                    { "name": "720p", "url": url1},
+                    { "name": "1080p", "url": url2},
+                ]
             if url[:1] == "D":
                 if not url.endswith(".m3u"):
                     data = url[1:].split(",")
