@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-04-17 Celeburdi
+# 2019-05-07 Celeburdi
 ###################################################
-HOST_VERSION = "1.8"
+HOST_VERSION = "1.9"
 ###################################################
 # LOCAL import
 ###################################################
@@ -67,7 +67,7 @@ def _addepg(epgs,id,item):
         epgs.append({"id": id, "items": [item]})
         x = len(epgs)-1
     return x
-   
+
 def _getChannelDefs():
     return [
         {"title": "M1 HD", "icon": "m1hd.jpg", "group" : "main", "selres": True },
@@ -183,7 +183,7 @@ def _getDirectRadios():
         {"title": "River FM", "url": "D" + _mr("4711/live.mp3") },
 
         ]
-    
+
 def _getMTVATVs():
     return [
         {"title": "Duna HD", "url": "dunalive" },
@@ -204,7 +204,7 @@ class EPGProviderNone:
 
     def getEPG(self, epgId, epgType):
         printDBG("EPGProviderNone.getEPG %r : %r, %r" % (epgId.provId, epgId.itemId, epgType))
-        return None,""    
+        return None,""
 
 
 class EPGProvider:
@@ -242,7 +242,7 @@ class EPGProvider:
                 "title": title,
                 "desc": data.get("description","") or ""
                 }
-                    
+
             other_info = {}
             if data["ageRating"]:
                 other_info['age_limit'] = str(data["ageRating"])
@@ -250,7 +250,7 @@ class EPGProvider:
                 other_info['genre'] = data["genre"]
             if data["year"]:
                 other_info["year"] = str(data["year"])
-                   
+
             item["other_info"] = other_info
 
             if len(self.cache) > 100: self.cache.popitem()
@@ -285,7 +285,7 @@ class MindiGoHU(CBaseHostClass):
         self.DEFAULT_ICON_URL = _gh("mindigodefault.jpg")
         self.HEADER = self.cm.getDefaultHeader()
         self.MAIN_URL = "https://tv.mindigo.hu"
-        
+
         self.API_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108syNTLzcxLyUzP18soBQBdkggm"))
         self.API_HEADER = dict(self.HEADER)
@@ -303,9 +303,9 @@ class MindiGoHU(CBaseHostClass):
         self.BRANDS_URL = self.API_URL+zlib.decompress(base64.b64decode(
             "eJzTTyzI1C8z0k8qSsxLKQYAIrQE6g=="))
         self.GENRES_URL = self.API_URL+zlib.decompress(base64.b64decode(
-            "eJzTTyzI1C8z0k9PzStKtc9ILI5Pzs8rSc0rsS0pKk1VSypKzEuxBQD+5A29"))
+            "eJzTTyzI1C8z0k9PzStKtc9ILI5Pzs8rSc0rsS0pKk0FAKY8C1M="))
         self.VIDEOS_URL = self.API_URL+zlib.decompress(base64.b64decode(
-            "eJzTTyzI1C8z0i/LTEnNL7bPLEnNjS9ILYovSExPtTU0UksqSsxLsQUACjoNlA=="))
+            "eJzTTyzI1C8z0i/LTEnNL7bPLEnNjS9ILYovSExPtTU0AgCyogsq"))
         self.VOD_URL = self.API_URL+zlib.decompress(base64.b64decode(
             "eJzTTyzI1C8z0i8uKUpNzC3WL8tPsU/OzytJzSuJz0yxra5Vg/FKKgtSbcsyU1Lz1cDMjJxiAMi9"
             "F4Q="))
@@ -328,6 +328,19 @@ class MindiGoHU(CBaseHostClass):
         self.MTVA_CHANNEL_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS1y/ISaxMLdLLTU3JTMzOyczO1ssohQrmpZbDpAsyCuzLMlNS820BYd8Vcw=="))
 
+        self.M3_URL = zlib.decompress(base64.b64decode(
+            "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzUGAI6qCes="))
+        self.M3_PROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTLyjKTy9KzAUADYgDKA=="))
+        self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
+            "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
+        self.M3_LIVE_URL = zlib.decompress(base64.b64decode(
+            "eJwVyUEKgCAQAMDfdHRDD4UgPUUUDYVdEXcV+n11HKaIdLYALAOjVi2soMoEjAxkPNaVfRoEPuW7"
+            "NhYPTBXtV4feu/pxydOzIzPPjTNzTe4FEO8eUA=="))
+        self.M3_VOD_URL = zlib.decompress(base64.b64decode(
+            "eJwFweEKwBAUBtC32U+35s9S8igiFoVp36WWvPvOScwdigj8Fn+K5qYTaVDxoCrtfALZEO/cwJZc"
+            "LWC1tuGvR13luA5EIAe99g/DNxq4"))
+
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
 
@@ -341,7 +354,7 @@ class MindiGoHU(CBaseHostClass):
 
         self.tvChannels = None
         self.radioChannels = None
-        
+
         self.tvEpgs = None
         self.radioEpgs = None
 
@@ -355,8 +368,8 @@ class MindiGoHU(CBaseHostClass):
         except:
             self.epgProvider_porthu = EPGProviderNone()
 
-        
- 
+
+
     def getFullIconUrl(self, url):
         if not url: return self.DEFAULT_ICON_URL
         return url
@@ -369,7 +382,7 @@ class MindiGoHU(CBaseHostClass):
     def getApiPage(self, url):
         params = dict(self.apiParams)
         params["header"]["x-access-token"] = self.token
-        return self.cm.getPage(url , params)    
+        return self.cm.getPage(url , params)
 
     def getChannels(self):
         printDBG('MindiGoHU.getChannels')
@@ -418,12 +431,12 @@ class MindiGoHU(CBaseHostClass):
                 if selres: url = "R"+i["id"]
                 else: url = "M"+i["id"]
 
-                epg_id = "E"+i["id"] 
+                epg_id = "E"+i["id"]
 
                 params = {'good_for_fav': True, "title": title, "desc": "", "order": order, "url": url, "epg_id": epg_id, "epg_prov_id": "mindigo"  }
                 if icon:
                     params['icon']= icon
-           
+
                 _addepg(tvEpgs,i["id"],params)
                 tvChannels.append(params)
         except Exception: printExc()
@@ -517,7 +530,7 @@ class MindiGoHU(CBaseHostClass):
         # add nava m3
         params = {'good_for_fav': True, "title": "M3 (MTVA)", "desc": "", "order": 2, "url": "m"+"m3", "icon": _gh("m3.jpg") }
         tvChannels.append(params)
-        
+
         # get direct radio
         for i in _getDirectRadios():
             title = i["title"]
@@ -547,7 +560,7 @@ class MindiGoHU(CBaseHostClass):
                 params.update({"epg_id": epg_id, "epg_prov_id": chdef["epg_prov_id"]})
 
             radioChannels.append(params)
- 
+
         if len(tvChannels) > 0:
             tvChannels.sort(key=lambda k: (k["order"], k["title"]))
             self.tvChannels=tvChannels
@@ -555,7 +568,7 @@ class MindiGoHU(CBaseHostClass):
         if len(radioChannels) > 0:
             radioChannels.sort(key=lambda k: (k["order"], k["title"]))
             self.radioChannels=radioChannels
-        
+
         self.tvEpgs = tvEpgs
         self.radioEpgs = radioEpgs
 
@@ -568,15 +581,15 @@ class MindiGoHU(CBaseHostClass):
             data = json_loads(data)["data"]
             mindigChannels = data.get("available",[])
             mindigChannels.extend(data.get("unavailable",[]))
-    
+
             for epg in epgs:
                 id = epg["id"]
                 ch = next((ch for ch in mindigChannels if ch["id"] == id), None)
                 if not ch: continue
-                data = ch["epg"] 
+                data = ch["epg"]
                 start = datetime.fromtimestamp(data["startTimeStamp"]).strftime("%H:%M")
                 end = datetime.fromtimestamp(data["endTimeStamp"]).strftime("-%H:%M ")
-                desc = start + end + data["title"]  
+                desc = start + end + data["title"]
                 for i in epg["items"]:
                     i["desc"] = desc
 
@@ -586,10 +599,12 @@ class MindiGoHU(CBaseHostClass):
         printDBG("MindiGoHU.listMainMenu")
 
         if not self.tryTologin(): return
-        
+
         MAIN_CAT_TAB = [{"category":"list_tvChannels", "title": _("TV channels") },
                         {"category":"list_radioChannels", "title": _("Radio stations") },
-                        {"category":"list_brands", "title": _("Videos") }]
+                        {"category":"list_brands", "title": "MindiGo "+_("Videos") },
+                        {"category":"list_mtvavideos", "title": "MTVA "+ _("Videos") },
+                        {"category":"list_m3videos", "title": "M3 "+ _("Videos") } ]
         self.listsTab(MAIN_CAT_TAB, cItem)
 
     def listTVChannels(self, cItem):
@@ -605,18 +620,19 @@ class MindiGoHU(CBaseHostClass):
 
     def listBrands(self, cItem):
         printDBG("MindiGoHU.listBrands")
-        params = dict(cItem)
-        params.update({"category":"list_mtvavideos", "title": "MTVA"})
+
+        params=dict(cItem)
+        params.update( {"category":"list_genres", "title": _("All"), "url": "" } )
         self.addDir(params)
-        
+
         try:
             sts, data = self.getApiPage(self.BRANDS_URL)
             if not sts: raise Exception("Can't get brands")
-            
-            data = json_loads(data)["data"]    
+
+            data = json_loads(data)["data"]
             for i in data:
                 params=dict(cItem)
-                params.update( {"category":"list_genres", "title": i["name"], "desc": i["description"], "url": i["id"]} ) 
+                params.update( {"category":"list_genres", "title": i["name"], "desc": i["description"], "url": "&brand="+i["id"]} )
                 self.addDir(params)
         except Exception: printExc()
 
@@ -635,8 +651,33 @@ class MindiGoHU(CBaseHostClass):
                 if not title: continue
                 params = {'good_for_fav': True, "title": title, "desc": "", "url": "D"+url }
                 self.addVideo(params)
-                
+
         except Exception: printExc()
+
+    def listM3Videos(self, cItem):
+        printDBG("MindiGoHU.listM3Videos")
+        # get M3 videos
+        try:
+            sts, data = self.getPage(self.M3_PROGRAM_URL)
+            if not sts: raise Exception("Can't get M3 program page")
+            data = json_loads(data)["program"]
+            for i in data:
+                url = "v"+i["id"]
+
+                if next((x for x in self.currList if x["url"] == url), None): continue
+                
+                title = i["title"]
+                subtitle = i["subtitle"]
+                if subtitle:
+                    title = title + " - " + subtitle
+                desc = i["description"]
+                params = {'good_for_fav': True, "title": title, "desc": desc, "url": url, "icon": self.M3_IMAGE_URL + i["id"]}
+                self.addVideo(params)
+
+        except Exception: printExc()
+
+
+
 
     def listGenres(self, cItem):
         try:
@@ -647,20 +688,20 @@ class MindiGoHU(CBaseHostClass):
             params=dict(cItem)
             params.update( {"category":"list_types", "title": _("All") } )
             self.addDir(params)
-            data = json_loads(data)["data"]    
+            data = json_loads(data)["data"]
             for i in data:
                 params=dict(cItem)
-                params.update( {"category":"list_types", "title": i["title"], "url": url+"&genre="+i["id"]} ) 
+                params.update( {"category":"list_types", "title": i["title"], "url": url+"&genre="+i["id"]} )
                 self.addDir(params)
         except Exception: printExc()
-        
+
     def listTypes(self, cItem):
         params=dict(cItem)
         params.update( {"category":"list_videos", "title": _("All") } )
         self.addDir(params)
 
         url = cItem["url"]
-        
+
         params=dict(cItem)
         params.update( {"category":"list_videos", "title": _("Film"), "url": url+"&type=film"  } )
         self.addDir(params)
@@ -680,12 +721,12 @@ class MindiGoHU(CBaseHostClass):
             sts, data = self.getApiPage(url)
             if not sts: raise Exception("Can't get GENRE page")
 
-            data = json_loads(data)["data"]    
+            data = json_loads(data)["data"]
             if page == 0:
                 videos = data.get("fresh",[])
-                videos.extend( data.get("hot",[]))    
+                videos.extend( data.get("hot",[]))
             else: videos = []
- 
+
             count = data["other"]["count"]
             others = data["other"]["list"]
             videos.extend(others)
@@ -693,55 +734,54 @@ class MindiGoHU(CBaseHostClass):
                 params=dict(cItem)
                 if "image" in i and len(i["image"]) > 0:
                     icon = i["image"][0].get("simple")
-                    
+
                 params.update({'good_for_fav': True, "title": i["title"], "url": "V"+i["id"], "epg_id": "V"+i["id"], "epg_prov_id": "mindigo" } )
                 if icon:
                     params["icon"] = icon
-            
+
                 self.addVideo(params)
             if page*12+len(others) < count:
                 params = dict(cItem)
                 params.update({'title':_("Next page"), 'page': page+1})
                 self.addDir(params)
-             
+
         except Exception: printExc()
- 
+
     def getLinksForVideo(self, cItem):
         url = cItem['url']
         printDBG("MindiGoHU.getLinksForVideo url[%s]" % url)
         videoUrls = []
         self.tryTologin()
         try:
-            if url == "mm3":
-                link = cItem.get("link")
-                expires = cItem.get("expires",0)
-                if not link or expires < time():
-                    cItem.pop("link",None)
-                    cItem.pop("expires",None)
-                
-                    sts, data = self.getPage("https://archivum.mtva.hu/m3")
+            if url == "mm3" or url[:1] == "v":
+                if os.path.exists(self.COOKIE_FILE):
+                    token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
+                else:
+                    token = ""
+                if not token:
+                    sts, data = self.getPage(self.M3_URL)
                     if not sts: return []
-                    link = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
-                    expires = int(time())+3600 
-                    cItem["link"] = link
-                    cItem["expires"] = expires
+                    token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
+                if url == "mm3":
+                    url1 = strwithmeta(self.M3_LIVE_URL+token,{'User-Agent':self.HEADER ['User-Agent']} )
+                    url2 = strwithmeta(self.M3_LIVE_URL+token,{'User-Agent':self.HEADER ['User-Agent']} )
 
-                url1 = strwithmeta("https://strlb2.nava.hu/lbs/m3_live_drm/_definst_/smil:m3_720p.smil?type=m3u8&sessid="+link,{'User-Agent':self.HEADER ['User-Agent']} ) 
-                url2 = strwithmeta("https://strlb2.nava.hu/lbs/m3_live_drm/_definst_/smil:m3.smil?type=m3u8&sessid="+link,{'User-Agent':self.HEADER ['User-Agent']} ) 
-
-                return [
-                    { "name": "720p", "url": url1},
-                    { "name": "1080p", "url": url2},
-                ]
+                    return [
+                        { "name": "720p", "url": url1},
+                        { "name": "1080p", "url": url2},
+                    ]
+                uri = strwithmeta(self.M3_VOD_URL.format(url[1:],token),{'User-Agent':self.HEADER ['User-Agent']} )
+                return getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
+                
             if url[:1] == "D":
                 if not url.endswith(".m3u"):
                     data = url[1:].split(",")
-                else:    
+                else:
                     sts, data = self.cm.getPage(url[1:], self.hbbtvParams)
                     if not sts: return []
                     data = data.replace("\r\n", "\n").split("\n")
                 if len(data) == 1:
-                    return [{'name':'direct link', 'url': data[0]} ]  
+                    return [{'name':'direct link', 'url': data[0]} ]
                 for i in data:
                     if not i.startswith("http"): continue
                     if i.endswith('.mp3'):
@@ -762,11 +802,11 @@ class MindiGoHU(CBaseHostClass):
                     except: pass
                     return []
                 data = json_loads(data)
-                link = data["data"]["url"]            
+                link = data["data"]["url"]
             else:
                 link = cItem.get("link")
                 expires = cItem.get("expires",0)
-               
+
                 if not link or expires < time():
                     cItem.pop("link",None)
                     cItem.pop("expires",None)
@@ -775,7 +815,7 @@ class MindiGoHU(CBaseHostClass):
                         if not sts:
                             try:
                                 data = json_loads(data)["errorMessage"]
-                                if data: SetIPTVPlayerLastHostError( data ) 
+                                if data: SetIPTVPlayerLastHostError( data )
                             except: pass
                             return []
                         data = json_loads(data)
@@ -787,10 +827,10 @@ class MindiGoHU(CBaseHostClass):
                         sts, link = self.cm.getPage(self.MTVA_CHANNEL_URL + url[1:], self.hbbtvParams)
                         if not sts: return []
                         link = self.cm.ph.getDataBeetwenMarkers(link, '"file": "', '"', False)[1]
-                        link = "https:" + link.replace("\/","/") 
-                       
+                        link = "https:" + link.replace("\/","/")
+
                     else: return []
-                    expires = int(time())+21600 
+                    expires = int(time())+21600
                     cItem["link"] = link
                     cItem["expires"] = expires
 
@@ -864,7 +904,7 @@ class MindiGoHU(CBaseHostClass):
             printDBG('tryTologin wrong login data')
             self.sessionEx.open(MessageBox, _('The host %s requires registration. \nPlease fill your login and password in the host configuration. Available under blue button.') % self.getMainUrl(), type = MessageBox.TYPE_ERROR, timeout = 10 )
             return False
-     
+
         try:
             if os.path.exists(self.COOKIE_FILE): cj = self.cm.getCookie(self.COOKIE_FILE)
             else: cj = cookielib.MozillaCookieJar()
@@ -896,7 +936,7 @@ class MindiGoHU(CBaseHostClass):
                 data = {"app_version": "1.0.21",
                   "platform": "web",
                   "refreshToken": refresh.value}
-                
+
                 sts, data = self.cm.getPage(self.EXTEND_URL, self.apiParams, data )
                 if sts:
                     data = json_loads(data)
@@ -942,13 +982,15 @@ class MindiGoHU(CBaseHostClass):
         if name == None:
             self.listMainMenu({"name":"category"})
         elif category == "list_tvChannels":
-            self.listTVChannels(self.currItem) 
+            self.listTVChannels(self.currItem)
         elif category == "list_radioChannels":
-            self.listRadioChannels(self.currItem) 
+            self.listRadioChannels(self.currItem)
         elif category == "list_brands":
-            self.listBrands(self.currItem) 
+            self.listBrands(self.currItem)
         elif category == "list_mtvavideos":
             self.listMtvaVideos(self.currItem)
+        elif category == "list_m3videos":
+            self.listM3Videos(self.currItem)
         elif category == "list_genres":
             self.listGenres(self.currItem)
         elif category == "list_types":
