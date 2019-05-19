@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-07 Celeburdi
+# 2019-05-19 Celeburdi
 ###################################################
-HOST_VERSION = "1.9"
+HOST_VERSION = "2.0"
 ###################################################
 # LOCAL import
 ###################################################
@@ -156,6 +156,9 @@ def _getChannelDefs():
         {"title": "Manna FM", "icon": "mannafm.jpg", "group" : "regional" },
         {"title": "River FM", "icon": "riverfm.jpg", "group" : "religious" },
 
+        {"title": "Euronews", "icon": "euronews.jpg", "group" : "news" },
+        {"title": "Erdély TV", "icon": "erdelytv.jpg", "group" : "regional" },
+
         ]
 
 
@@ -194,6 +197,14 @@ def _getMTVATVs():
         {"title": "M5 HD", "url": "mtv5live" },
 
         ]
+
+
+def _getYTTVs():
+    return [
+        {"title": "Euronews", "url": "https://www.youtube.com/channel/UC4Ct8gIf9f0n4mdyGsFiZRA/live" },
+#        {"title": "Erdély TV", "url": "https://www.youtube.com/channel/UCS5t4xWMT6lIZ9tcPROUd5A/live" },
+        ]
+
 
 class EPGProviderNone:
     def getName(self):
@@ -334,9 +345,13 @@ class MindiGoHU(CBaseHostClass):
             "eJzTLyjKTy9KzAUADYgDKA=="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-        self.M3_LIVE_URL = zlib.decompress(base64.b64decode(
+        self.M3_LIVE_URL1 = zlib.decompress(base64.b64decode(
             "eJwVyUEKgCAQAMDfdHRDD4UgPUUUDYVdEXcV+n11HKaIdLYALAOjVi2soMoEjAxkPNaVfRoEPuW7"
             "NhYPTBXtV4feu/pxydOzIzPPjTNzTe4FEO8eUA=="))
+        self.M3_LIVE_URL2=zlib.decompress(base64.b64decode(
+            "eJwVxTEKwCAMAMDfdDRQlyJInxIULQYSEROF/r70lmtmQwOA2uR8up52cm0BZwXxyLQrlimApT7U"
+            "1RBUiIN493/bO2oUv65DqyqV+AGFrxzo"))
+
         self.M3_VOD_URL = zlib.decompress(base64.b64decode(
             "eJwFweEKwBAUBtC32U+35s9S8igiFoVp36WWvPvOScwdigj8Fn+K5qYTaVDxoCrtfALZEO/cwJZc"
             "LWC1tuGvR13luA5EIAe99g/DNxq4"))
@@ -518,6 +533,29 @@ class MindiGoHU(CBaseHostClass):
                 icon = ""
                 order = 0
             params = {'good_for_fav': True, "title": title + " (MTVA)", "desc": "", "order": order, "url": url }
+            if icon:
+                params['icon']= icon
+            ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
+            if ch:
+                epg_id = "E"+ch["id"]
+                params.update( {"epg_id": epg_id, "epg_prov_id": "mindigo"} )
+                _addepg(tvEpgs,ch["id"],params)
+            tvChannels.append(params)
+
+        # get Youtube TV channels
+        for i in _getYTTVs():
+            title = i["title"]
+            url = "Y"+i["url"]
+            chdef = next((chdef for chdef in chdefs if chdef["title"] == title), None)
+            if chdef:
+                title = chdef.get("rename",title)
+                icon = chdef.get("icon")
+                if icon: icon = _gh(icon)
+                order = groups.index(chdef.get("group",""))
+            else:
+                icon = ""
+                order = 0
+            params = {'good_for_fav': True, "title": title + " (YT)", "desc": "", "order": order, "url": url }
             if icon:
                 params['icon']= icon
             ch = next((ch for ch in mindigChannels if ch["name"].strip() == title), None)
@@ -753,6 +791,10 @@ class MindiGoHU(CBaseHostClass):
         videoUrls = []
         self.tryTologin()
         try:
+            if url[:1] == "Y":
+                return self.up.getVideoLinkExt(url[1:])  
+            
+            
             if url == "mm3" or url[:1] == "v":
                 if os.path.exists(self.COOKIE_FILE):
                     token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
@@ -763,8 +805,8 @@ class MindiGoHU(CBaseHostClass):
                     if not sts: return []
                     token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
                 if url == "mm3":
-                    url1 = strwithmeta(self.M3_LIVE_URL+token,{'User-Agent':self.HEADER ['User-Agent']} )
-                    url2 = strwithmeta(self.M3_LIVE_URL+token,{'User-Agent':self.HEADER ['User-Agent']} )
+                    url1 = strwithmeta(self.M3_LIVE_URL1+token,{'User-Agent':self.HEADER ['User-Agent']} )
+                    url2 = strwithmeta(self.M3_LIVE_URL2+token,{'User-Agent':self.HEADER ['User-Agent']} )
 
                     return [
                         { "name": "720p", "url": url1},
