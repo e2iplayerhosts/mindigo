@@ -2,7 +2,7 @@
 ###################################################
 # 2020-03-27 Celeburdi
 ###################################################
-HOST_VERSION = "2.2"
+HOST_VERSION = "2.3"
 ###################################################
 # LOCAL import
 ###################################################
@@ -343,9 +343,10 @@ class MindiGoHU(CBaseHostClass):
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzUGAI6qCes="))
         self.M3_PROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
             "eJzTLyjKTy9KzAUADYgDKA=="))
+        self.M3_DAILYPROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTT0nMzKnULSjKTy9KzAUAJqwFaA=="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-
         self.M3_STREAM_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzXWLy4pSk3MtS9JLEpPLbEFAFFPD6k="))
 
@@ -635,7 +636,8 @@ class MindiGoHU(CBaseHostClass):
                         {"category":"list_radioChannels", "title": _("Radio stations") },
                         {"category":"list_brands", "title": "MindiGo "+_("Videos") },
                         {"category":"list_mtvavideos", "title": "MTVA "+ _("Videos") },
-                        {"category":"list_m3videos", "title": "M3 "+ _("Videos") } ]
+                        {"category":"list_m3videos", "title": "M3 "+ _("Videos") },
+                        {"category":"list_m3dailyvideos", "title": "M3+ "+ _("Videos") } ]
         self.listsTab(MAIN_CAT_TAB, cItem)
 
     def listTVChannels(self, cItem):
@@ -685,11 +687,11 @@ class MindiGoHU(CBaseHostClass):
 
         except Exception: printExc()
 
-    def listM3Videos(self, cItem):
+    def listM3Videos(self, cItem, url):
         printDBG("MindiGoHU.listM3Videos")
         # get M3 videos
         try:
-            sts, data = self.getPage(self.M3_PROGRAM_URL)
+            sts, data = self.getPage(url)
             if not sts: raise Exception("Can't get M3 program page")
             data = json_loads(data)["program"]
             for i in data:
@@ -1025,7 +1027,9 @@ class MindiGoHU(CBaseHostClass):
         elif category == "list_mtvavideos":
             self.listMtvaVideos(self.currItem)
         elif category == "list_m3videos":
-            self.listM3Videos(self.currItem)
+            self.listM3Videos(self.currItem,self.M3_PROGRAM_URL)
+        elif category == "list_m3dailyvideos":
+            self.listM3Videos(self.currItem,self.M3_DAILYPROGRAM_URL)
         elif category == "list_genres":
             self.listGenres(self.currItem)
         elif category == "list_types":
