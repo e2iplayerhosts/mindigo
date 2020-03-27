@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 ###################################################
-# 2019-05-19 Celeburdi
+# 2020-03-27 Celeburdi
 ###################################################
-HOST_VERSION = "2.0"
+HOST_VERSION = "2.2"
 ###################################################
 # LOCAL import
 ###################################################
@@ -202,7 +202,7 @@ def _getMTVATVs():
 def _getYTTVs():
     return [
         {"title": "Euronews", "url": "https://www.youtube.com/channel/UC4Ct8gIf9f0n4mdyGsFiZRA/live" },
-#        {"title": "Erdély TV", "url": "https://www.youtube.com/channel/UCS5t4xWMT6lIZ9tcPROUd5A/live" },
+#        {"title": "Erdély TV", "url": "https://www.youtube.com/channel//live" },
         ]
 
 
@@ -345,16 +345,9 @@ class MindiGoHU(CBaseHostClass):
             "eJzTLyjKTy9KzAUADYgDKA=="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-        self.M3_LIVE_URL1 = zlib.decompress(base64.b64decode(
-            "eJwVyUEKgCAQAMDfdHRDD4UgPUUUDYVdEXcV+n11HKaIdLYALAOjVi2soMoEjAxkPNaVfRoEPuW7"
-            "NhYPTBXtV4feu/pxydOzIzPPjTNzTe4FEO8eUA=="))
-        self.M3_LIVE_URL2=zlib.decompress(base64.b64decode(
-            "eJwVxTEKwCAMAMDfdDRQlyJInxIULQYSEROF/r70lmtmQwOA2uR8up52cm0BZwXxyLQrlimApT7U"
-            "1RBUiIN493/bO2oUv65DqyqV+AGFrxzo"))
 
-        self.M3_VOD_URL = zlib.decompress(base64.b64decode(
-            "eJwFweEKwBAUBtC32U+35s9S8igiFoVp36WWvPvOScwdigj8Fn+K5qYTaVDxoCrtfALZEO/cwJZc"
-            "LWC1tuGvR13luA5EIAe99g/DNxq4"))
+        self.M3_STREAM_URL = zlib.decompress(base64.b64decode(
+            "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzXWLy4pSk3MtS9JLEpPLbEFAFFPD6k="))
 
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
@@ -805,14 +798,14 @@ class MindiGoHU(CBaseHostClass):
                     if not sts: return []
                     token = self.cm.getCookieItem(self.COOKIE_FILE, "MtvaArchivumToken")
                 if url == "mm3":
-                    url1 = strwithmeta(self.M3_LIVE_URL1+token,{'User-Agent':self.HEADER ['User-Agent']} )
-                    url2 = strwithmeta(self.M3_LIVE_URL2+token,{'User-Agent':self.HEADER ['User-Agent']} )
-
-                    return [
-                        { "name": "720p", "url": url1},
-                        { "name": "1080p", "url": url2},
-                    ]
-                uri = strwithmeta(self.M3_VOD_URL.format(url[1:],token),{'User-Agent':self.HEADER ['User-Agent']} )
+                    url = self.M3_STREAM_URL + "live" 
+                else:
+                    url = self.M3_STREAM_URL + url[1:] 
+     
+                sts, data = self.getPage(url)
+                if not sts: return []
+                data = json_loads(data)["url"]
+                uri = strwithmeta(data,{'User-Agent':self.HEADER ['User-Agent']} )
                 return getDirectM3U8Playlist(uri, checkExt=False, checkContent=True)
                 
             if url[:1] == "D":
