@@ -2,7 +2,7 @@
 ###################################################
 # 2020-03-27 Celeburdi
 ###################################################
-HOST_VERSION = "2.3"
+HOST_VERSION = "2.4"
 ###################################################
 # LOCAL import
 ###################################################
@@ -345,10 +345,12 @@ class MindiGoHU(CBaseHostClass):
             "eJzTLyjKTy9KzAUADYgDKA=="))
         self.M3_DAILYPROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
             "eJzTT0nMzKnULSjKTy9KzAUAJqwFaA=="))
+        self.M3_OPEN_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTT08t0c0vSM2zT0/NK0q1BQAw4gXc"))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
-        self.M3_STREAM_URL = zlib.decompress(base64.b64decode(
-            "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVzzXWLy4pSk3MtS9JLEpPLbEFAFFPD6k="))
+        self.M3_STREAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
+            "eJzTLy4pSk3MtS9JLEpPLbEFAC3gBb8="))
 
         self.HBBTV_HEADER = dict(self.HEADER)
         self.HBBTV_HEADER.update( {"User-Agent": "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.3) AppleWebkit/538.1 (KHTML, like Gecko) SamsungBrowser/1.0 TV Safari/538.1"} )
@@ -636,8 +638,9 @@ class MindiGoHU(CBaseHostClass):
                         {"category":"list_radioChannels", "title": _("Radio stations") },
                         {"category":"list_brands", "title": "MindiGo "+_("Videos") },
                         {"category":"list_mtvavideos", "title": "MTVA "+ _("Videos") },
-                        {"category":"list_m3videos", "title": "M3 "+ _("Videos") },
-                        {"category":"list_m3dailyvideos", "title": "M3+ "+ _("Videos") } ]
+                        {"category":"list_m3videos", "title": "M3 "+ _("Videos"), "url": "P" },
+                        {"category":"list_m3videos", "title": "M3+ "+ _("Videos"), "url": "D" },
+                        {"category":"list_mtvaarch", "title": "MTVA Archivum "+ _("Videos") } ]
         self.listsTab(MAIN_CAT_TAB, cItem)
 
     def listTVChannels(self, cItem):
@@ -687,13 +690,23 @@ class MindiGoHU(CBaseHostClass):
 
         except Exception: printExc()
 
-    def listM3Videos(self, cItem, url):
+    def listM3Videos(self, cItem):
         printDBG("MindiGoHU.listM3Videos")
         # get M3 videos
+        url = cItem["url"] 
+        kind = url[:1] 
+
         try:
+            if kind == "P": 
+                url = self.M3_PROGRAM_URL
+            elif kind == "D":
+                url = self.M3_DAILYPROGRAM_URL
+            elif kind == "A":
+                url = self.M3_OPEN_URL + url[1:]
+
             sts, data = self.getPage(url)
             if not sts: raise Exception("Can't get M3 program page")
-            data = json_loads(data)["program"]
+            data = json_loads(data)["docs" if kind == "A" else "program" ]
             for i in data:
                 url = "v"+i["id"]
 
@@ -709,6 +722,70 @@ class MindiGoHU(CBaseHostClass):
 
         except Exception: printExc()
 
+    def listMTVAArch(self, cItem):
+        printDBG("MindiGoHU.listMTVAArch")
+        try:
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Bűnügyi filmek"), "url": "A" + "B%25C5%25B1n%25C3%25BCgyi%2Bfilmek" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Fikciós sorozatok"), "url": "A" + "Fikci%25C3%25B3s%2Bsorozatok" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Gyermek és ifjúsági műsorok"), "url": "A" + "Gyermek%2B%25C3%25A9s%2Bifj%25C3%25BAs%25C3%25A1gi%2Bm%25C5%25B1sorok" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Irodalom"), "url": "A" + "Irodalom" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Ismeretterjesztő műsorok"), "url": "A" + "Ismeretterjeszt%25C5%2591%2Bm%25C5%25B1sorok" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Játékok és vetélkedők"), "url": "A" + "J%25C3%25A1t%25C3%25A9kok%2B%25C3%25A9s%2Bvet%25C3%25A9lked%25C5%2591k" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Kabaré"), "url": "A" + "Kabar%25C3%25A9" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Klasszikus filmek és sorozatok"), "url": "A" + "Klasszikus%2Bfilmek%2B%25C3%25A9s%2Bsorozatok" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Minisorozatok"), "url": "A" + "Minisorozatok" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Portré"), "url": "A" + "Portr%25C3%25A9" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Romantikus filmek"), "url": "A" + "Romantikus%2Bfilmek" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Színház"), "url": "A" + "Sz%25C3%25ADnh%25C3%25A1z" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Tévéfilmek"), "url": "A" + "T%25C3%25A9v%25C3%25A9filmek" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Vígjáték"), "url": "A" + "V%25C3%25ADgj%25C3%25A1t%25C3%25A9k" } )
+            self.addDir(params)
+
+            params=dict(cItem)
+            params.update( {"category":"list_m3videos", "title": _("Zene"), "url": "A" + "Zene" } )
+            self.addDir(params)
+
+        except Exception: printExc()
 
 
 
@@ -1027,9 +1104,9 @@ class MindiGoHU(CBaseHostClass):
         elif category == "list_mtvavideos":
             self.listMtvaVideos(self.currItem)
         elif category == "list_m3videos":
-            self.listM3Videos(self.currItem,self.M3_PROGRAM_URL)
-        elif category == "list_m3dailyvideos":
-            self.listM3Videos(self.currItem,self.M3_DAILYPROGRAM_URL)
+            self.listM3Videos(self.currItem)
+        elif category == "list_mtvaarch":
+            self.listMTVAArch(self.currItem)
         elif category == "list_genres":
             self.listGenres(self.currItem)
         elif category == "list_types":
