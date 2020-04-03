@@ -2,7 +2,7 @@
 ###################################################
 # 2020-03-27 Celeburdi
 ###################################################
-HOST_VERSION = "2.4"
+HOST_VERSION = "2.5"
 ###################################################
 # LOCAL import
 ###################################################
@@ -346,7 +346,7 @@ class MindiGoHU(CBaseHostClass):
         self.M3_DAILYPROGRAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
             "eJzTT0nMzKnULSjKTy9KzAUAJqwFaA=="))
         self.M3_OPEN_URL = self.M3_URL+zlib.decompress(base64.b64decode(
-            "eJzTT08t0c0vSM2zT0/NK0q1BQAw4gXc"))
+            "eJzTT08t0c0vSM2zT87PyUlNLsnMz7MFAFVWB/c="))
         self.M3_IMAGE_URL = zlib.decompress(base64.b64decode(
             "eJzLKCkpKLbS108sSs7ILCvN1cstKUvUyyjVz8xNTE8t1s811gcA7PIMvw=="))
         self.M3_STREAM_URL = self.M3_URL+zlib.decompress(base64.b64decode(
@@ -726,63 +726,47 @@ class MindiGoHU(CBaseHostClass):
         printDBG("MindiGoHU.listMTVAArch")
         try:
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Bűnügyi filmek"), "url": "A" + "B%25C5%25B1n%25C3%25BCgyi%2Bfilmek" } )
+            params.update( {"category":"list_m3videos", "title": _("Tévéfilmek és sorozatok"), "url": "A" + "M3-VMOpdsOpZmlsbWVrIMOpcyBzb3JvemF0b2s" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Fikciós sorozatok"), "url": "A" + "Fikci%25C3%25B3s%2Bsorozatok" } )
+            params.update( {"category":"list_m3videos", "title": _("Családi filmek"), "url": "A" + "M3-Q3NhbMOhZGkgZmlsbWVr" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Gyermek és ifjúsági műsorok"), "url": "A" + "Gyermek%2B%25C3%25A9s%2Bifj%25C3%25BAs%25C3%25A1gi%2Bm%25C5%25B1sorok" } )
+            params.update( {"category":"list_m3videos", "title": _("Kabaré, vígjáték"), "url": "A" + "M3-S2FiYXLDqSwgdsOtZ2rDoXTDqWs" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Irodalom"), "url": "A" + "Irodalom" } )
+            params.update( {"category":"list_m3videos", "title": _("Romantikus"), "url": "A" + "M3-Um9tYW50aWt1cw" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Ismeretterjesztő műsorok"), "url": "A" + "Ismeretterjeszt%25C5%2591%2Bm%25C5%25B1sorok" } )
+            params.update( {"category":"list_m3videos", "title": _("Bűnügyi filmek és sorozatok"), "url": "A" + "M3-QsWxbsO8Z3lpIGZpbG1layDDqXMgc29yb3phdG9r" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Játékok és vetélkedők"), "url": "A" + "J%25C3%25A1t%25C3%25A9kok%2B%25C3%25A9s%2Bvet%25C3%25A9lked%25C5%2591k" } )
+            params.update( {"category":"list_m3videos", "title": _("Játék és vetélkedő"), "url": "A" + "M3-SsOhdMOpayDDqXMgdmV0w6lsa2VkxZE" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Kabaré"), "url": "A" + "Kabar%25C3%25A9" } )
+            params.update( {"category":"list_m3videos", "title": _("Színház"), "url": "A" + "M3-U3rDrW5ow6F6" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Klasszikus filmek és sorozatok"), "url": "A" + "Klasszikus%2Bfilmek%2B%25C3%25A9s%2Bsorozatok" } )
+            params.update( {"category":"list_m3videos", "title": _("Ismeretterjesztő"), "url": "A" + "M3-SXNtZXJldHRlcmplc3p0xZE" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Minisorozatok"), "url": "A" + "Minisorozatok" } )
+            params.update( {"category":"list_m3videos", "title": _("Zene"), "url": "A" + "M3-WmVuZQ" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Portré"), "url": "A" + "Portr%25C3%25A9" } )
+            params.update( {"category":"list_m3videos", "title": _("Mesék"), "url": "A" + "M3-TWVzw6lr" } )
             self.addDir(params)
 
             params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Romantikus filmek"), "url": "A" + "Romantikus%2Bfilmek" } )
-            self.addDir(params)
-
-            params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Színház"), "url": "A" + "Sz%25C3%25ADnh%25C3%25A1z" } )
-            self.addDir(params)
-
-            params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Tévéfilmek"), "url": "A" + "T%25C3%25A9v%25C3%25A9filmek" } )
-            self.addDir(params)
-
-            params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Vígjáték"), "url": "A" + "V%25C3%25ADgj%25C3%25A1t%25C3%25A9k" } )
-            self.addDir(params)
-
-            params=dict(cItem)
-            params.update( {"category":"list_m3videos", "title": _("Zene"), "url": "A" + "Zene" } )
+            params.update( {"category":"list_m3videos", "title": _("Sport"), "url": "A" + "M3-U3BvcnQ" } )
             self.addDir(params)
 
         except Exception: printExc()
